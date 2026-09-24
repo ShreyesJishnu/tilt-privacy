@@ -1,0 +1,40 @@
+# Publish the privacy policy to GitHub Pages.
+#
+# The "Deploy from a branch" source needs no workflow at all - GitHub builds it itself. That
+# pipeline produced no runs for this repository, so this makes the deploy explicit: it leaves a
+# build log to read when something goes wrong, instead of a 404 with nothing behind it.
+#
+# The site is three static files at the repository root, so there is nothing to compile. The
+# artifact is the root directory as-is; Jekyll is bypassed entirely.
+name: Deploy privacy policy to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time. Never cancel a running one: a half-finished deploy would take the
+# policy offline, and Google Play checks that URL.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
